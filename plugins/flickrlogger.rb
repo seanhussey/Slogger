@@ -1,5 +1,6 @@
 =begin
 Plugin: Flickr Logger
+Version: 1.0
 Description: Logs today's photos from Flickr.
 Notes:
   Get your Flickr ID at <http://idgettr.com/>
@@ -61,7 +62,7 @@ class FlickrLogger < Slogger
 
     sl = DayOne.new
     config['flickr_tags'] ||= ''
-    tags = "\n\n#{config['flickr_tags']}\n" unless config['flickr_tags'] == ''
+    tags = config['flickr_tags'] == '' ? '' : "\n\n#{config['flickr_tags']}\n"
     today = @timespan.to_i
 
     @log.info("Getting Flickr images for #{config['flickr_ids'].join(', ')}")
@@ -89,6 +90,7 @@ class FlickrLogger < Slogger
               url = photo.attributes["url_m"]
               content = "## " + photo.attributes['title']
               content += "\n\n" + photo.attributes['content'] unless photo.attributes['content'].nil?
+              content += tags
               images << { 'content' => content, 'date' => image_date, 'url' => url }
             }
         }
