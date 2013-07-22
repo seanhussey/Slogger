@@ -62,9 +62,13 @@ Slogger indexes various public social services and creates Day One (<http://dayo
 ## Install ##
 
 1. Download and unzip (or clone using git) the Slogger project. It can be stored in your home directory, a scripts folder or anywhere else on your drive.
-2. Default plugins are stored in `/plugins/`, additional plugins are usually found in `/plugins_disabled/`. Plugins are enabled and disabled by adding/removing them from the `/plugins/` folder. Move any additional plugins you want to use into `/plugins/` and disable any other plugins by moving them from `/plugins/` to `plugins_disabled`. (Plugins that are found in `plugins` but not configured will not break anything, but you'll see warnings when run.)
-3. From within the Slogger folder, run `./slogger --update-config` to create the initial configuration file. If this doesn't work, you may need to make the file executable: `chmod a+x slogger` from within the Slogger folder. Note that any time you add new plugins or update existing ones, you'll want to run `./slogger --update-config` to ensure that your available options are up to date.
-4. Edit the file `slogger_config` that shows up in your Slogger folder
+2. From the command line, change to the Slogger folder and run the following commands:
+        
+        sudo gem install bundler
+        bundle install 
+3. Default plugins are stored in `/plugins/`, additional plugins are usually found in `/plugins_disabled/`. Plugins are enabled and disabled by adding/removing them from the `/plugins/` folder. Move any additional plugins you want to use into `/plugins/` and disable any other plugins by moving them from `/plugins/` to `plugins_disabled`. (Plugins that are found in `plugins` but not configured will not break anything, but you'll see warnings when run.)
+4. From within the Slogger folder, run `./slogger --update-config` to create the initial configuration file. If this doesn't work, you may need to make the file executable: `chmod a+x slogger` from within the Slogger folder. Note that any time you add new plugins or update existing ones, you'll want to run `./slogger --update-config` to ensure that your available options are up to date.
+5. Edit the file `slogger_config` that shows up in your Slogger folder
     - The required options will be 'storage:', 'image_filename_is_title:', 'date_format:' and 'time_format:'
     - storage: should be one of
         -  'icloud'
@@ -73,8 +77,9 @@ Slogger indexes various public social services and creates Day One (<http://dayo
     - image_filename_is_title: should be set to true or false. If true, it will use the base filename (without extension) as the title of images imported individually.
     - date_format and time_format should be set to your preferred style (strftime)
 
-5. Edit additional configuration options for any plugins defined. The config file is formatted as YAML, and your options need to conform to that syntax. For the most part, you can just maintain the formatting (quotes, dashes, brackets, etc.) of the default settings when updating.
-6. Next time you run `./slogger`, it will execute the enabled and configured plugins and generate your journal entries. 
+6. Edit additional configuration options for any plugins defined. The config file is formatted as YAML, and your options need to conform to that syntax. For the most part, you can just maintain the formatting (quotes, dashes, brackets, etc.) of the default settings when updating.
+    - **Note:** Some plugins have options that will be filled in automatically. For example, the Twitter plugin requires you to log in on the command line and enter a PIN, after which it completes the authorization and saves your token to the configuration. If you install a plugin which requires oAuth, be sure to run Slogger from the command line with "./slogger -o plugin_name" once to complete the login procedure and save your credentials.
+7. Next time you run `./slogger`, it will execute the enabled and configured plugins and generate your journal entries. 
 
 ## Usage ##
 
@@ -124,7 +129,7 @@ When developing plugins you can create a directory called 'plugins_develop' in t
 
 `@log` is a global logger object. use `@log.info("Message")` (or `warn`/`error`/`fatal`) to generate log messages using the default formatter.
 
-`@config` is the global configuration object. Your plugin settings will be stored under `@config[PluginClassName]`.
+`@config` is the global configuration object. Your plugin settings will be stored under `@config[PluginClassName]`. If you return the config object at the end of your do_log function, any modifications will be stored (e.g. for saving oAuth tokens).
 
 `$options` contains options parsed from the command line. Use `$options[:optionname]` to read the setting.
 
@@ -136,6 +141,51 @@ When developing plugins you can create a directory called 'plugins_develop' in t
 `@timespan` is available to all plugins and contains a date object based on the timespan setting. This defaults to 24 hours prior to the run.
 
 `@date_format`, `@time_format` and `@datetime_format` (this is just the conjunction of the first two) are available to all plugins and should be used wherever you output a date or time to DayOne files, e.g. `Time.now.strftime(@date_format)`.
+
+## Troubleshooting
+
+### System Requirements
+
+Slogger depends on Apple’s system Ruby version to run. You can check the Ruby version by typing `ruby -v` in your terminal, it should return something like `ruby 1.8.7 (2012-02-08 patchlevel 358) [universal-darwin12.0]`.
+
+Slogger does not currently support Ruby 1.9.x or 2.x.
+
+If you are using RVM or RBENV to manage your Ruby installation, you can set the system Ruby as the default.
+
+For RVM check here: [https://rvm.io/rubies/default](https://rvm.io/rubies/default)
+
+For RBENV check here: [https://github.com/sstephenson/rbenv#choosing-the-ruby-version](https://github.com/sstephenson/rbenv#choosing-the-ruby-version)
+
+### Xcode Command Line Tools
+
+In order for Slogger to run you must have an up-to-date version of Xcode's Command Line Tools installed.
+
+Simply download Xcode from the OSX App Store. When it has downloaded launch it, open "Preferences", and under "Downloads" select "Install" on "Command Line Tools".
+
+### Plugins
+
+If Slogger is running, but returning an error message, it may be an issue with a plugin configuration.
+
+It may help to move all plugins to the Disabled Plugins directory, and then add them back into the Plugins directory one by one, running `./slogger` each time to ensure it is not returning any errors. That way, you can identify if there is an issue with a particular Plugin.
+
+Common issues with Plugins:
+
+1. Feeds entered incorrectly. Multiple RSS feeds should be entered like
+`feeds: [http://feed1.com/feed1.rss, http://feed2.com/feed2.rss, http://feed3.com/feed3.rss]`
+
+2. Attempting to fetch an invalid feed. Feeds can be validated here: [http://validator.w3.org/feed/](http://validator.w3.org/feed/)
+
+### Sync / Dropbox
+
+It's not uncommon to have some sync issues using iCloud. The developers of the Day One app explicitly favour using Dropbox to sync your journal between your Mac and iPhone or iPad. So maybe use Dropbox.
+
+If you are using Dropbox, a common location for your Day One Journal, which will need to be entered in the Slogger Config file under "Storage" is `/Users/YOURUSERNAME/Dropbox/Apps/Day One/Journal.dayone`. Please note that if you have moved your Dropbox, to your Desktop for instance, that would change the path required to `/Users/YOURUSERNAME/Desktop/Dropbox/Apps/Day One/Journal.dayone`
+
+### Date and Time Formats
+
+By default Slogger sets the Date format to ISO 8601 (Y/m/d) `"%F"` and the Time format to H:M (24-hour clock) `"%R"`. These settings can be changed to anything from the `strftime` specification, viewable here: [http://linux.die.net/man/3/strftime](http://linux.die.net/man/3/strftime).
+
+The European Date format dd/mm/yy is not supported. The closest option is probably to set date to `"%x"` which is "The preferred date representation for the current locale without the time." 
 
 ## License
 
